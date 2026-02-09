@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+ 
+html, body {
+  background-color: #020617; /* نفس لون VRAVK */
+  overscroll-behavior: none; /* يمنع الارتداد الأبيض عند السحب */
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* لجعل التمرير ناعماً واحترافياً */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1e293b #020617;
+}
+ 
+@keyframes scan {
+  0% { top: 0%; opacity: 0; }
+  50% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+.animate-scan {
+  animation: scan 2s linear infinite;
+}
