@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, ShieldAlert, Globe,Zap, Lock, Users, barChart as BarChart } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Globe, Zap, Lock, Users, BarChart } from 'lucide-react';
 import axios from 'axios';
 const Counter = ({ target }: { target: number }) => {
   const [count, setCount] = useState(0);
