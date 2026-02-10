@@ -61,7 +61,8 @@ export default function Home() {
           <div className="hidden md:flex gap-8 text-sm font-medium text-slate-400">
            <Link href="/threats" className="hover:text-blue-400 transition-colors">قاعدة التهديدات</Link> 
             <Link href="/api-docs" className="hover:text-blue-400 transition-colors">المطورين API</Link>
-            <a href="#" className="hover:text-blue-400 transition-colors">عن النظام</a>
+            <Link href="/elite" className="hover:text-blue-400 transition-colors">عن النظام</Link>
+
           </div>
           <button className="bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full text-xs font-bold transition-all">دخول النخبة</button>
         </div>
