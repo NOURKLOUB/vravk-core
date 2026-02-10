@@ -48,6 +48,39 @@ export default function Home() {
       setLoading(false);
     }
   };
+  // ضعه هنا في نهاية الملف تماماً
+const LivePulse = () => {
+  const [activePulse, setActivePulse] = useState<string | null>(null);
+  const pulses = [
+    "🛡️ مستخدم من عمان قام بفحص رابط بنجاح",
+    "⚠️ تم كشف تهديد ينتحل صفة أمازون في دبي",
+    "🛡️ مستخدم من الرياض انضم إلى قائمة النخبة",
+    "🛡️ نظام VRAVK كشف محاولة تصيد في لندن",
+    "⚠️ تحذير: اكتشاف نطاق خبيث جديد .xyz",
+    "🛡️ مستخدم من القاهرة قام بتأمين حسابه الآن"
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const randomPulse = pulses[Math.floor(Math.random() * pulses.length)];
+      setActivePulse(randomPulse);
+      setTimeout(() => setActivePulse(null), 4000); 
+    }, 6000); 
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!activePulse) return null;
+
+  return (
+    <div className="fixed bottom-10 right-10 z-50 animate-in slide-in-from-right-full duration-500">
+      <div className="bg-slate-900/90 border border-blue-500/30 backdrop-blur-xl p-4 rounded-2xl shadow-2xl flex items-center gap-3">
+        <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
+        <span className="text-xs font-bold text-slate-200 font-sans">{activePulse}</span>
+      </div>
+    </div>
+  );
+};
 
   return (
     <main className="min-h-screen w-full bg-[#020617] text-slate-200 overflow-x-hidden">
@@ -181,6 +214,8 @@ export default function Home() {
       <footer className="border-t border-white/5 py-12 text-center cursor-pointer">
         <p className="text-slate-400 text-xs font-bold tracking-[0.3em] uppercase">Powered by FRAVK Cyber Intelligence Group</p>
       </footer>
+         {/* استدعاء النبض العالمي هنا */}
+      <LivePulse /> 
     </main>
   );
 }
