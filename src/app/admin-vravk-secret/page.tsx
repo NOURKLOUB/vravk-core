@@ -1,8 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, ShieldAlert, Activity, Globe, Eye, ArrowUpRight, Lock, ShieldCheck } from 'lucide-react';
-import Link from 'next/link';
-import { supabase } from '@/app/lib/supabase';// تأكد من وجود هذا السطر
+import { LayoutDashboard, Users, ShieldAlert, Activity, Globe, ShieldCheck, Lock, ArrowUpRight } from 'lucide-react';
+import { supabase } from '@/app/lib/supabase';
 
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -12,26 +11,19 @@ export default function AdminDashboard() {
   
   const ADMIN_KEY = "VRAVK_X_2026";
 
-  // 1. تعريف الدالة أولاً (قبل الاستدعاء)
   const fetchLiveDashboard = async () => {
     try {
-      // جلب إجمالي الفحوصات
       const { count: totalCount } = await supabase.from('scans').select('*', { count: 'exact', head: true });
-      
-      // جلب الفحوصات عالية الخطورة (> 70)
       const { count: riskyCount } = await supabase.from('scans').select('*', { count: 'exact', head: true }).gt('risk_score', 70);
-      
-      // جلب آخر 5 عمليات فحص
       const { data: recentScans } = await supabase.from('scans').select('*').order('created_at', { ascending: false }).limit(5);
 
       setRealStats({ total: totalCount || 0, risky: riskyCount || 0 });
       setHistory(recentScans || []);
     } catch (error) {
-      console.error("خطأ في جلب البيانات:", error);
+      console.log("Error fetching data:", error);
     }
   };
 
-  // 2. استدعاء الدالة داخل الـ useEffect
   useEffect(() => {
     if (isAuthenticated) {
       fetchLiveDashboard();
@@ -50,23 +42,21 @@ export default function AdminDashboard() {
 
   if (!isAuthenticated) {
     return (
-      <main className="min-h-screen bg-[#020617] flex items-center justify-center p-6 font-sans">
+      <main className="min-h-screen bg-[#020617] flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-slate-900 border border-blue-500/20 p-10 rounded-[2.5rem] text-center shadow-2xl">
           <div className="w-20 h-20 bg-blue-600/10 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-blue-500/10">
             <Lock className="text-blue-500" size={40} />
           </div>
-          <h2 className="text-2xl font-black text-white mb-3 italic tracking-tight">VRAVK SECURITY CHECK</h2>
-          <p className="text-slate-500 text-[10px] mb-8 uppercase tracking-[0.3em] font-bold">نظام الوصول إلى البيانات السيادية</p>
-          
+          <h2 className="text-2xl font-black text-white mb-3 italic tracking-tight uppercase">VRAVK Security</h2>
           <form onSubmit={checkAuth} className="space-y-4">
             <input 
               type="password" 
               placeholder="ENTER SECRET KEY"
-              className="w-full bg-black border border-white/5 rounded-2xl py-4 px-4 text-center font-mono text-blue-500 focus:border-blue-600 outline-none transition-all"
+              className="w-full bg-black border border-white/5 rounded-2xl py-4 px-4 text-center font-mono text-blue-500 focus:border-blue-600 outline-none"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <button className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl transition-all active:scale-95 shadow-lg shadow-blue-900/20 uppercase tracking-widest text-xs">
+            <button className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl transition-all uppercase tracking-widest text-xs">
               تأكيد الهوية
             </button>
           </form>
@@ -75,101 +65,77 @@ export default function AdminDashboard() {
     );
   }
 
-  // البيانات التي كانت ناقصة (الآن كاملة)
-  const stats = [
-    { label: "إجمالي الزوار", value: "1,250", icon: <Users className="text-blue-500"/>, trend: "+12%" },
-    { label: "عمليات الفحص", value: "842", icon: <Activity className="text-purple-500"/>, trend: "+5%" },
-    { label: "روابط محظورة", value: "156", icon: <ShieldAlert className="text-red-500"/>, trend: "+20%" },
-    { label: "أمان النظام", value: "99.9%", icon: <ShieldCheck className="text-emerald-500"/>, trend: "مستقر" }
-  ];
-
-  const liveScans = [
-    { id: 1, url: "amazon-gift-verify.xyz", country: "الأردن", status: "محظور", risk: "98%" },
-    { id: 2, url: "facebook-secure-login.net", country: "السعودية", status: "محظور", risk: "95%" },
-    { id: 3, url: "google.com", country: "مصر", status: "آمن", risk: "5%" },
-    { id: 4, url: "paypal-update-now.top", country: "الإمارات", status: "محظور", risk: "92%" },
-  ];
-
   return (
-    <main className="min-h-screen bg-[#020617] text-white p-6 md:p-10 font-sans animate-in fade-in duration-700">
-      {/* Header */}
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 mb-12 border-b border-white/5 pb-8">
+    <main className="min-h-screen bg-[#020617] text-white p-6 md:p-10 font-sans">
+      <div className="max-w-7xl mx-auto flex justify-between items-center mb-12 border-b border-white/5 pb-8">
         <div className="flex items-center gap-5">
-          <div className="bg-blue-600 p-4 rounded-[1.5rem] shadow-xl shadow-blue-900/20">
+          <div className="bg-blue-600 p-4 rounded-[1.5rem]">
             <LayoutDashboard size={32} />
           </div>
           <div>
-            <h1 className="text-3xl font-black italic tracking-tighter uppercase">VRAVK Command</h1>
-            <p className="text-slate-500 text-[10px] uppercase tracking-[0.4em] font-bold">غرفة العمليات المركزية</p>
+            <h1 className="text-3xl font-black italic uppercase tracking-tighter">VRAVK Command</h1>
+            <p className="text-slate-500 text-[10px] uppercase tracking-[0.4em] font-bold">غرفة العمليات الحية</p>
           </div>
         </div>
-        <button 
-  onClick={() => {
-    setIsAuthenticated(false); // إغلاق الجلسة
-    setPassword("");           // مسح كلمة السر من الصندوق فوراً (تصفير الذاكرة)
-  }} 
-  className="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-500 px-6 py-2 rounded-xl text-xs font-bold transition-all"
->
-  إغلاق الجلسة الآمنة
-</button>
+        <button onClick={() => setIsAuthenticated(false)} className="text-xs bg-red-500/10 text-red-500 px-4 py-2 rounded-xl border border-red-500/20">خروج آمن</button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        {stats.map((stat, i) => (
-          <div key={i} className="bg-slate-900/50 border border-white/5 p-6 rounded-[2rem] hover:border-blue-500/30 transition-all group">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-white/5 rounded-2xl group-hover:scale-110 transition-transform">{stat.icon}</div>
-              <span className="text-[10px] bg-emerald-500/10 px-2 py-1 rounded-full text-emerald-500 font-bold tracking-tighter">{stat.trend}</span>
-            </div>
-            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">{stat.label}</p>
-            <p className="text-4xl font-black font-mono tracking-tighter">{stat.value}</p>
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        {/* إجمالي الزوار الحقيقي */}
+        <div className="bg-slate-900/50 border border-white/5 p-6 rounded-[2rem]">
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">إجمالي الفحوصات</p>
+          <p className="text-4xl font-black font-mono">{realStats.total}</p>
+        </div>
+        
+        {/* التهديدات الحقيقية */}
+        <div className="bg-slate-900/50 border border-white/5 p-6 rounded-[2rem]">
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">روابط محظورة</p>
+          <p className="text-4xl font-black font-mono text-red-500">{realStats.risky}</p>
+        </div>
+
+        <div className="bg-slate-900/50 border border-white/5 p-6 rounded-[2rem]">
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">نشاط السيرفر</p>
+          <p className="text-4xl font-black font-mono text-emerald-500">100%</p>
+        </div>
+
+        <div className="bg-slate-900/50 border border-white/5 p-6 rounded-[2rem]">
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">أمان النظام</p>
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="text-blue-500" />
+            <p className="text-2xl font-black uppercase">Active</p>
           </div>
-        ))}
+        </div>
       </div>
 
-      {/* Live Activity Table */}
-      <div className="max-w-7xl mx-auto bg-slate-900/30 border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl backdrop-blur-md">
+      {/* جدول الفحص المباشر الحقيقي */}
+      <div className="max-w-7xl mx-auto bg-slate-900/30 border border-white/5 rounded-[2.5rem] overflow-hidden">
         <div className="p-8 border-b border-white/5 flex justify-between items-center">
-            <h2 className="text-xl font-bold flex items-center gap-3 italic"><Globe size={24} className="text-blue-500 animate-pulse"/> مراقبة الفحص الحي</h2>
-            <div className="flex gap-2">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">تحديث مباشر</span>
-            </div>
+            <h2 className="text-xl font-bold italic flex items-center gap-3"><Globe className="text-blue-500 animate-pulse"/> سجل الفحص الحقيقي</h2>
+            <button onClick={fetchLiveDashboard} className="text-[10px] bg-white/5 px-3 py-1 rounded-full hover:bg-white/10 transition-all">تحديث البيانات</button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-right">
-              <thead className="bg-white/5 text-slate-500 uppercase text-[10px] font-black tracking-[0.2em]">
+              <thead className="bg-white/5 text-slate-500 text-[10px] font-black uppercase tracking-widest">
                   <tr>
-                      <th className="p-6">النطاق المستهدف</th>
-                      <th className="p-6">مصدر الطلب</th>
-                      <th className="p-6">القرار</th>
-                      <th className="p-6">نسبة الخطر</th>
-                      <th className="p-6">الإجراء</th>
+                      <th className="p-6">النطاق</th>
+                      <th className="p-6">الخطر</th>
+                      <th className="p-6">الحالة</th>
+                      <th className="p-6">التوقيت</th>
                   </tr>
               </thead>
               <tbody className="divide-y divide-white/5 font-medium text-sm">
-                  {liveScans.map((scan) => (
-                      <tr key={scan.id} className="hover:bg-white/[0.03] transition-colors group">
-                          <td className="p-6 font-mono text-blue-400 group-hover:text-blue-300">{scan.url}</td>
-                          <td className="p-6 text-slate-300">{scan.country}</td>
-                          <td className="p-6">
-                              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${scan.status === 'محظور' ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
-                                  {scan.status}
-                              </span>
-                          </td>
-                          <td className={`p-6 font-black ${Number(scan.risk.replace('%','')) > 50 ? 'text-red-500' : 'text-emerald-500'}`}>{scan.risk}</td>
-                          <td className="p-6"><ArrowUpRight size={18} className="text-slate-700 group-hover:text-white transition-colors cursor-pointer" /></td>
+                  {history.map((scan: any) => (
+                      <tr key={scan.id} className="hover:bg-white/[0.03] transition-colors">
+                          <td className="p-6 font-mono text-blue-400">{scan.domain}</td>
+                          <td className={`p-6 font-black ${scan.risk_score > 70 ? 'text-red-500' : 'text-emerald-500'}`}>{scan.risk_score}%</td>
+                          <td className="p-6 text-xs uppercase">{scan.risk_score > 70 ? 'محظور' : 'آمن'}</td>
+                          <td className="p-6 text-slate-500 text-xs">{new Date(scan.created_at).toLocaleTimeString('ar-JO')}</td>
                       </tr>
                   ))}
               </tbody>
           </table>
         </div>
       </div>
-
-      <footer className="mt-16 text-center text-slate-700 text-[10px] font-black uppercase tracking-[0.5em]">
-        VRAVK System Intelligence Internal Access Only
-      </footer>
     </main>
   );
 }
