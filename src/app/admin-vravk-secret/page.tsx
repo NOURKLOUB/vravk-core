@@ -74,11 +74,14 @@ export default function AdminDashboard() {
           </div>
         </div>
         <button 
-          onClick={() => setIsAuthenticated(false)} 
-          className="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-500 px-6 py-2 rounded-xl text-xs font-bold transition-all"
-        >
-          إغلاق الجلسة الآمنة
-        </button>
+  onClick={() => {
+    setIsAuthenticated(false); // إغلاق الجلسة
+    setPassword("");           // مسح كلمة السر من الصندوق فوراً (تصفير الذاكرة)
+  }} 
+  className="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-500 px-6 py-2 rounded-xl text-xs font-bold transition-all"
+>
+  إغلاق الجلسة الآمنة
+</button>
       </div>
 
       {/* Stats Grid */}
