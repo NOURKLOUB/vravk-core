@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, ShieldAlert, Globe, Zap, Lock, Users, BarChart } from 'lucide-react';
 import axios from 'axios';
+import Link from 'next/link';
 const Counter = ({ target }: { target: number }) => {
   const [count, setCount] = useState(0);
 
@@ -56,7 +57,7 @@ export default function Home() {
             <span className="text-xl font-black tracking-tighter text-white">FRAVK <span className="text-blue-500">CORE</span></span>
           </div>
           <div className="hidden md:flex gap-8 text-sm font-medium text-slate-400">
-            <a href="#" className="hover:text-blue-400 transition-colors">قاعدة التهديدات</a>
+           <Link href="/threats" className="hover:text-blue-400 transition-colors">قاعدة التهديدات</Link> 
             <a href="#" className="hover:text-blue-400 transition-colors">المطورين API</a>
             <a href="#" className="hover:text-blue-400 transition-colors">عن النظام</a>
           </div>
