@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ShieldCheck, ShieldAlert, Globe, Zap, Lock, Users, BarChart, Mail, Crown, ArrowRight, Search } from 'lucide-react';
 import axios from 'axios';
 import Link from 'next/link';
-
+import { supabase } from '@/app/lib/supabase';
 // 1. مكون العداد المستقر (Counter)
 const Counter = ({ target }: { target: number }) => {
   const [count, setCount] = useState(0);
@@ -63,19 +63,36 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  const handleScan = async () => {
-    if (!url) return;
-    setLoading(true);
-    setResult(null);
-    try {
-      const response = await axios.post('/api/check', { url });
-      setResult(response.data);
-    } catch (error) {
-      console.error("Error scanning", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+const handleScan = async () => {
+  if (!url) return;
+  setLoading(true);
+  setResult(null);
+
+  try {
+    const response = await axios.post('/api/check', { url });
+    const data = response.data;
+    setResult(data);
+
+    // --- دهاء التخزين الحقيقي (المرحلة الجديدة) ---
+    const { error } = await supabase.from('scans').insert([
+      { 
+        url: url, 
+        domain: data.domain, 
+        risk_score: data.riskScore, 
+        message: data.message,
+        country: "Jordan" // سنقوم بجلبها ديناميكياً لاحقاً
+      }
+    ]);
+
+    if (error) console.error("خطأ في التخزين:", error.message);
+    else console.log("✅ تم تسجيل الفحص في قاعدة البيانات العالمية");
+
+  } catch (error) {
+    console.error("Error scanning", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <main className="min-h-screen w-full bg-[#020617] text-slate-200 overflow-x-hidden selection:bg-blue-500/30">
