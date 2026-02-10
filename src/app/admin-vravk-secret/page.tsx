@@ -1,19 +1,49 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Users, ShieldAlert, Activity, Globe, Eye, ArrowUpRight, Lock, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
+import { supabase } from '@/app/lib/supabase';// تأكد من وجود هذا السطر
 
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
+  const [realStats, setRealStats] = useState({ total: 0, risky: 0 });
+  const [history, setHistory] = useState<any[]>([]);
+  
   const ADMIN_KEY = "VRAVK_X_2026";
+
+  // 1. تعريف الدالة أولاً (قبل الاستدعاء)
+  const fetchLiveDashboard = async () => {
+    try {
+      // جلب إجمالي الفحوصات
+      const { count: totalCount } = await supabase.from('scans').select('*', { count: 'exact', head: true });
+      
+      // جلب الفحوصات عالية الخطورة (> 70)
+      const { count: riskyCount } = await supabase.from('scans').select('*', { count: 'exact', head: true }).gt('risk_score', 70);
+      
+      // جلب آخر 5 عمليات فحص
+      const { data: recentScans } = await supabase.from('scans').select('*').order('created_at', { ascending: false }).limit(5);
+
+      setRealStats({ total: totalCount || 0, risky: riskyCount || 0 });
+      setHistory(recentScans || []);
+    } catch (error) {
+      console.error("خطأ في جلب البيانات:", error);
+    }
+  };
+
+  // 2. استدعاء الدالة داخل الـ useEffect
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchLiveDashboard();
+    }
+  }, [isAuthenticated]);
 
   const checkAuth = (e: React.FormEvent) => {
     e.preventDefault();
     if (password === ADMIN_KEY) {
       setIsAuthenticated(true);
     } else {
-      alert("⚠️ وصول غير مصرح! تم تسجيل محاولتك.");
+      alert("⚠️ وصول غير مصرح!");
       window.location.href = "/";
     }
   };
