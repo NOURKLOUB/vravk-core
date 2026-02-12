@@ -7,89 +7,73 @@ const globalBlacklist = new Set(['://bitly.com', 'test-nasp.top']);
 
 export async function POST(req: Request) {
   try {
-    const { url } = await req.json();
-    if (!url) return NextResponse.json({ status: "error", message: "الرابط فارغ" });
+    let { url } = await req.json();
+    if (!url || url.length < 4) return NextResponse.json({ status: "error", message: "الرابط قصير جداً أو غير صالح" });
 
-    let cleanUrl = url.trim();
-    if (!cleanUrl.startsWith('http')) cleanUrl = 'https://' + cleanUrl;
+    // 1. "فلتر الجدية" - كشف الكلام الفارغ
+    // إذا كان المدخل لا يحتوي على نقطة (.) أو مسافات، فهو ليس رابطاً
+    if (!url.includes('.') || url.includes(' ')) {
+      return NextResponse.json({ 
+        status: "error", 
+        message: "هذا ليس رابطاً صالحاً للفحص. يرجى إدخال عنوان موقع حقيقي : google.com)" 
+      });
+    }
 
+    // 2. تنظيف الرابط واستخراج الدومين بشكل أدق
     let hostname = "";
     try {
+      const cleanUrl = url.includes('://') ? url : 'https://' + url;
       hostname = new URL(cleanUrl).hostname.toLowerCase();
     } catch (e) {
-      return NextResponse.json({ status: "error", message: "تنسيق الرابط غير صحيح" });
+      return NextResponse.json({ status: "error", message: "تنسيق الرابط غير مدعوم" });
     }
 
-    // فحص الذاكرة وقاعدة بيانات التهديدات
-    if (globalBlacklist.has(hostname) || globalBlacklist.has(cleanUrl)) {
-      return NextResponse.json({ 
-        status: "success", 
-        riskScore: 100, 
-        message: "⚠️ محظور: هذا الرابط مدرج في القائمة السوداء العالمية للتهديدات السيادية!",
-        domain: hostname
-      });
+    // 3. خوارزمية الشك (لماذا يظهر 5% دائماً؟)
+    // سنرفع درجة "الشك المبدئي" ونضيف فحوصات أكثر صرامة
+    let riskScore = 10; // نبدأ بـ 10 بدل 5
+    let factors = [];
+
+    // فحص إذا كان الدومين مجرد أرقام (IP Address) - غالباً نصابين
+    if (/^[0-9.]+$/.test(hostname)) {
+      riskScore = 85;
+      factors.push("عنوان IP مباشر مشبوه");
     }
 
-    if (scanHistory.has(hostname)) {
-      return NextResponse.json({ ...scanHistory.get(hostname), cached: true });
+    // فحص النطاقات المجانية والرخيصة (تحديث القائمة)
+    const suspiciousTLDs = ['.xyz', '.top', '.buzz', '.tk', '.ml', '.ga', '.cf', '.gq', '.win'];
+    if (suspiciousTLDs.some(tld => hostname.endsWith(tld))) {
+      riskScore = Math.max(riskScore, 75);
+      factors.push("نطاق رخيص عالي الخطورة");
     }
 
-    let riskScore = 5;
-    let factors: string[] = [];
-    let finalDestination = hostname;
-
-    try {
-      const response = await axios.get(cleanUrl, {
-        timeout: 5000,
-        maxRedirects: 5,
-        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)...' }
-      });
-      
-      const finalUrlObj = new URL(response.request.res.responseUrl || cleanUrl);
-      finalDestination = finalUrlObj.hostname.toLowerCase();
-
-      const html = response.data.toLowerCase();
-      
-      // كشف ملفات التجسس (المعيار التاسع)
-      const maliciousPatterns = ['document.cookie', 'eval(atob', 'onkeypress'];
-      if (maliciousPatterns.some(p => html.includes(p))) {
-        riskScore = 92;
-        factors.push("أكواد تجسس وسرقة جلسات");
-      }
-    } catch (e) { }
-
-    // خوارزمية الدهاء النهائية
-    const badTLDs = ['.xyz', '.top', '.buzz', '.win', '.cf', '.ga'];
-    const brands = ['amazon', 'google', 'paypal', 'binance', 'netflix', 'apple', 'facebook'];
-    
-    if (badTLDs.some(tld => finalDestination.endsWith(tld))) {
-      riskScore = Math.max(riskScore, 85);
-      factors.push("نطاق مشبوه");
+    // فحص الكلمات الاحتيالية في الدومين
+    const scamKeywords = ['login', 'verify', 'account', 'update', 'secure', 'gift', 'prize', 'free'];
+    if (scamKeywords.some(word => hostname.includes(word))) {
+      riskScore += 40;
+      factors.push("كلمات مفتاحية احتيالية");
     }
 
-    if (brands.some(b => finalDestination.includes(b) && !finalDestination.endsWith(b + '.com'))) {
+    // فحص الانتحال (البراندات)
+    const brands = ['google', 'amazon', 'paypal', 'apple', 'facebook', 'netflix', 'microsoft'];
+    if (brands.some(b => hostname.includes(b) && !hostname.endsWith(b + '.com') && !hostname.endsWith(b + '.net'))) {
       riskScore = 99;
-      factors.push("انتحال علامة تجارية");
+      factors.push("انتحال هوية علامة تجارية");
     }
 
-    // دهاء التنبؤ: إذا كانت النتيجة > 80، أضفه تلقائياً للقائمة السوداء
-    if (riskScore >= 90) {
-      globalBlacklist.add(hostname);
-    }
+    // النتيجة النهائية
+    let finalRisk = Math.min(riskScore, 100);
+    let message = finalRisk > 70 
+      ? `⚠️ خطر: تم رصد (${factors.join(" + ")})` 
+      : "الموقع يبدو مستقراً برمجياً، ولكن كن حذراً دائماً.";
 
-    let finalMessage = riskScore >= 90 ? `⚠️ خطر مدمر: كشف (${factors.join(" + ")})` : "الموقع يبدو آمناً.";
-
-    const finalResult = {
+    return NextResponse.json({
       status: "success",
-      domain: finalDestination,
-      riskScore: Math.min(riskScore, 100),
-      message: finalMessage
-    };
-
-    scanHistory.set(hostname, finalResult);
-    return NextResponse.json(finalResult);
+      domain: hostname,
+      riskScore: finalRisk,
+      message
+    });
 
   } catch (error) {
-    return NextResponse.json({ status: "error", message: "خطأ في محرك الفحص" }, { status: 500 });
+    return NextResponse.json({ status: "error", message: "خطأ في محرك الفحص" });
   }
 }

@@ -71,24 +71,30 @@ const handleScan = async () => {
   try {
     const response = await axios.post('/api/check', { url });
     const data = response.data;
+
+    // 1. عرض النتيجة للمستخدم (سواء كانت خطأ أو نجاح)
     setResult(data);
 
-    // --- دهاء التخزين الحقيقي (المرحلة الجديدة) ---
-    const { error } = await supabase.from('scans').insert([
-      { 
-        url: url, 
-        domain: data.domain, 
-        risk_score: data.riskScore, 
-        message: data.message,
-        country: "Jordan" // سنقوم بجلبها ديناميكياً لاحقاً
-      }
-    ]);
+    // 2. الدهاء الاستخباراتي: التخزين فقط إذا كان الرابط حقيقياً (Success)
+    if (data.status === "success") {
+      const { error } = await supabase.from('scans').insert([
+        { 
+          url: url, 
+          domain: data.domain, 
+          risk_score: data.riskScore, 
+          message: data.message,
+          country: "Jordan" 
+        }
+      ]);
 
-    if (error) console.error("خطأ في التخزين:", error.message);
-    else console.log("✅ تم تسجيل الفحص في قاعدة البيانات العالمية");
+      if (error) console.error("خطأ في التخزين:", error.message);
+      else console.log("✅ تم تسجيل الفحص الحقيقي بنجاح");
+    } else {
+      console.log("ℹ️ تم إلغاء التخزين: المدخل ليس رابطاً صالحاً.");
+    }
 
   } catch (error) {
-    console.error("Error scanning", error);
+    console.error("خطأ فني في الاتصال", error);
   } finally {
     setLoading(false);
   }
@@ -187,16 +193,26 @@ const handleScan = async () => {
                   </div>
                 </div>
                 
-                <div className="relative w-32 h-32 flex items-center justify-center">
-                   <svg className="w-full h-full transform -rotate-90">
-                      <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
-                      <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" 
-                        strokeDasharray={364.4} strokeDashoffset={364.4 - (364.4 * result.riskScore) / 100}
-                        className={`transition-all duration-1000 ${result.riskScore > 60 ? 'text-red-500' : 'text-emerald-500'}`} 
-                      />
-                   </svg>
-                   <span className="absolute text-3xl font-black">{result.riskScore}%</span>
-                </div>
+           <div className="relative w-32 h-32 flex items-center justify-center">
+   <svg className="w-full h-full transform -rotate-90">
+      <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
+      
+      {/* الدهاء الرياضي: الحماية من الـ NaN */}
+      {result.status === "success" && !isNaN(result.riskScore) && (
+        <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" 
+          strokeDasharray={364.4} 
+          strokeDashoffset={364.4 - (364.4 * (result.riskScore || 0)) / 100}
+          className={`transition-all duration-1000 ${result.riskScore > 60 ? 'text-red-500' : 'text-emerald-500'}`} 
+        />
+      )}
+   </svg>
+   
+   {/* إظهار الرقم فقط في حال النجاح، أو علامة استفهام في حال الخطأ */}
+   <span className="absolute text-3xl font-black">
+     {result.status === "success" ? `${result.riskScore}%` : "?"}
+   </span>
+</div>
+
              </div>
 
              {/* زر التحذير العالمي - يظهر عند الخطر */}
